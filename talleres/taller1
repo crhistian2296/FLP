@@ -1,0 +1,11 @@
+#lang racket
+(define (invert l)
+    (cond
+      [(empty? cdr l) null]
+      [else null]))
+
+(define (swipe l)
+  (cons (cadr l) (car l)))
+
+(define (contarl l)
+  (cons (car l) (cdr l)))
