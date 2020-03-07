@@ -1,0 +1,105 @@
+#lang eopl
+
+;INTEGRANTES:
+;1871074 - MICHELLE GONZÁLEZ HERNÁNDEZ
+;1832127 - MELISSA GONZÁLEZ NEBRIJO
+;1832124 - CRHISTIAN ALEXANDER GARCÍA URBANO
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; 
+;;; Prefix-list::= (Prefix-exp) 
+;;; Prefix-exp ::= Int (num)
+;;;            ::= - Prefix-exp Prefix-exp diff-exp (operand1 operand2)
+
+;Notación de prefijo polaca
+
+;Definición data-type:
+(define-datatype prefix-exp prefix-exp?
+  (const-exp (num integer?))
+  (diff-exp (operand1 prefix-exp?) (operand2 prefix-exp?)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;Funcion auxiliar cases of parse
+;Recibe una lista y la retorna con cada numero dentro de ella en una lista con la palabra cons-exp y su valor.
+
+(define casesOfParse
+  (lambda (pl)
+    (if (null? pl) empty
+        (if (number?(car pl)) (cons (list 'const-exp (car pl)) (casesOfParse (cdr pl)))
+            (cons (car pl) (casesOfParse (cdr pl)))))))
+
+;Funcion auxiliar ParseOperator
+;Retorna una lista donde se reemplezan los - por la lista con la palabra diff-tree y sus operadores
+(define parseOperator
+  (lambda (pl)
+    (cond
+      [(null? (cdddr pl))  (list 'diff-exp (cadr pl) (caddr pl))]
+      [(and(eq? '- (car pl))(eq? '- (cadr pl))) (list 'diff-exp (parseOperator (cdr pl)) )]
+      [(and(eq? '- (car pl))(list? (cadr pl)) (list? (caddr pl)))  (list 'diff-exp (cadr pl) (caddr pl)) ]
+      [(and(eq? '- (car pl))(list? (cadr pl)) (eq? '- (caddr pl)))   (list 'diff-exp (cadr pl) (parseOperator (cddr pl))) ]
+      )))
+
+;Funcion auxiliar operator1
+;Retorna el operand1 de la lista ingresada
+(define operator1
+  (lambda (pl) 
+    (if (and (list? (car pl)) (list? (cadr pl)) )
+        (list (car pl) (cadr pl))
+        (cons  (car pl)  (operator1 (cdr pl)))
+        )))
+
+;Funcion auxiliar operator2
+;Retorna el operand2 de la lista ingresada
+(define operator2
+  (lambda (pl)     
+    (if (and (list? (car pl)) (list? (cadr pl)) )
+        (cddr pl)
+         (operator2 (cdr pl)))
+        ))
+
+;Funcion auxiliar AlmostParse
+;Hace el llamado a las funciones auxiliares anteriores con el operador 1 y operador 2
+;para retornar una diff-exp con identificadores y estructura que posteriormente facilitaran
+;las validaciones en el parse.
+(define almostparse
+  (lambda (pl)
+    (append  (parseOperator(operator1(casesOfParse pl)))
+             (list (parseOperator(operator2(casesOfParse pl)))))))
+
+;Parse
+;Recibe una diff-exp en sintaxis concreta y la retorna en abstracta
+(define parse
+  (lambda (pl)
+   (letrec (
+            (parser (lambda (pl)
+                      (cond
+                        [(eq? 'diff-exp (car pl)) (diff-exp (parser(cadr pl)) (parser (caddr pl)))]
+                        [(eq? 'const-exp (car pl)) (const-exp (cadr pl))]
+                        )))
+
+            (l (almostparse pl))
+            ) (parser l)
+     )
+    ))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;Funcion auxiliar low
+;Recibe una lista anidada y la retorna con todos los elementos en un mismo nivel.
+(define low
+  (lambda (l)
+    (cond
+      [(null? l) empty]
+      [(list? (car l)) (append (low (car l)) (low (cdr l)))]
+      [(cons (car l) (low (cdr l)))])))
+
+;Unparse
+;Recibe una diff-exp en sintaxis abstracta y la retorna en concreta 
+(define unparse
+  (lambda (pl)
+    (cases prefix-exp pl
+      (const-exp (num)  num)
+      (diff-exp (operand1 operand2)
+                (append (list '- (unparse operand1)) (list (unparse operand2)))))))
+

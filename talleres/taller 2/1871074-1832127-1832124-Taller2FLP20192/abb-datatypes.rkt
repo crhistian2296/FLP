@@ -1,0 +1,239 @@
+#lang eopl
+;INTEGRANTES:
+;1871074 - MICHELLE GONZÁLEZ HERNÁNDEZ
+;1832127 - MELISSA GONZÁLEZ NEBRIJO
+;1832124 - CRHISTIAN ALEXANDER GARCÍA URBANO
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Gramática: 
+;<Bintree> ::= () | (Int <Bintree> <Bintree>) 
+
+;Definición del tipo bintree
+(define-datatype bintree bintree?
+  (empty-bintree)
+  (recursive
+   (nodo number?)
+   (left-child bintree?)
+   (right-child bintree?)))
+
+;current-element
+;Extrae el valor de la raíz 
+(define current-element
+  (lambda (bt)
+    (cases bintree bt
+      (empty-bintree () eopl:error "there is no current-element")
+      (recursive (n l-bintree r-bintree) n))))
+
+;move-to-left-son
+;Extrae el valor del hijo derecho
+(define move-to-left-son
+  (lambda (bt)
+    (cases bintree bt
+      (empty-bintree () eopl:error "there is no left son")
+      (recursive (n l-bintree r-bintree) l-bintree))))
+
+;move-to-right-son
+;Extrae el valor del hijo izquierdo
+
+(define move-to-right-son
+  (lambda (bt)
+    (cases bintree bt
+      (empty-bintree () eopl:error "there is no right son ")
+      (recursive (n l-bintree r-bintree) r-bintree))))
+
+;number->bintree
+;Retorna una hoja con el numero que recibe como nodo
+
+(define number->bintree
+  (lambda (n)
+    (recursive n (empty-bintree) (empty-bintree))))
+
+;empty-bintree?
+;Determina si un arbol binario esta vacio
+
+(define empty-bintree?
+  (lambda (bt)
+    (cases bintree bt
+      (empty-bintree () #t)
+      (recursive (n l-tree r-tree) #f))))
+
+;at-leaf?
+;Determina si el arbol binario es una hoja
+
+(define at-leaf?
+  (lambda (bt)
+    (cases bintree bt
+      (empty-bintree () #f)
+      (recursive (n l-tree r-tree)
+                 (if (and (empty-bintree? l-tree) (empty-bintree? r-tree)) #t #f)))))
+
+;bintree-with-at-least-one-child?
+;Determina si el arbol tiene al menos un hijo
+
+(define bintree-with-at-least-one-child?
+  (lambda (bt)
+    (cases bintree bt
+      (empty-bintree () #f)
+      (recursive (n l-tree r-tree)
+           (if (or (not(empty-bintree? l-tree)) (not(empty-bintree? r-tree))) #t #f)))))
+
+;insert-to-left
+;Inserta en el hijo izquierdo una hoja con el numero que recibe como nodo .
+
+
+(define insert-to-left
+  (lambda (number bt)
+    (cases bintree bt
+      (empty-bintree () eopl:error "not-supported")
+      (recursive (n l-tree r-tree) (recursive n (number->bintree number) r-tree)))))
+
+
+;insert-to-right
+;Inserta en el hijo derecho una hoja con el numero que recibe como nodo .
+
+
+(define insert-to-right
+  (lambda (number bt)
+    (cases bintree bt
+      (empty-bintree () eopl:error "not-supported")
+      (recursive (n l-tree r-tree) (recursive n  l-tree (number->bintree number))))))
+
+
+;bintree-order-validation
+
+
+;Funcion auxiliar low
+;Recibe un arbol binario y retorna una lista de un solo nivel con todos los nodos de este.
+
+(define low
+   (lambda (bt)
+     (cases bintree bt
+       (empty-bintree () empty)
+       (recursive (n l-tree r-tree) (append (cons n (low l-tree)) (low r-tree))))))
+
+
+;Funcion auxiliar validate-left
+;Recibe un arbol binario y un numero. Determina si todos los nodos del hijo izquierdo son
+;menores al nodo actual.
+
+(define validate-left
+  (lambda (bt number)
+    (cases bintree bt
+      (empty-bintree () #t )
+      (recursive (n l-tree r-tree)
+           (letrec
+               ( (left (low  bt))
+                 (compare
+                  (lambda (number t) (if (null? t) #t
+                                    (and (<  (car t) number) (compare  number (cdr t))))
+                    )
+                  )
+                )(compare number left))
+                 ))))
+
+;Funcion auxiliar validate-right
+;Recibe un arbol binario y un numero. Determina si todos los nodos del hijo derecho son
+;mayores al nodo actual.
+
+(define validate-right
+  (lambda (bt number)
+    (cases bintree bt
+      (empty-bintree () #t )
+      (recursive (n l-tree r-tree)
+           (letrec
+               ( (right (low  bt))
+                 (compare
+                  (lambda (number t) (if (null? t) #t
+                                    (and (>  (car t) number) (compare  number (cdr t))))
+                    )
+                  )
+                )(compare number right))
+                 ))))
+
+
+;Determina si un arbol cumple con la propiedad de orden de los arboles de busqueda,
+;es decir que esta ordenado.
+
+(define bintree-order-validation
+  (lambda (bt)
+    (cases bintree bt
+      (empty-bintree () #t)
+      (recursive (n l-tree r-tree)
+         (letrec
+           ( (head n)
+             (left-child l-tree)
+             (right-child r-tree)
+             (left (if (empty-bintree? left-child) #t (< (current-element left-child) head) ))
+             (right (if (empty-bintree? right-child) #t (> (current-element right-child) head) ) )
+             (validation
+              (lambda ()
+                (and left (bintree-order-validation left-child)
+                     (validate-left left-child head)
+                     (validate-right right-child head)
+                     right (bintree-order-validation right-child))))
+             ) (validation)
+           )))))
+
+
+;Funcion axuliar element?
+;Determina si un elemento n se encuentra dentro de un arbol binario
+
+(define element?
+  (lambda (n btree)
+    (cases bintree btree
+      (empty-bintree () #f) 
+      (recursive (nd l-tree r-tree)
+                 (cond
+                   [(eq? n nd) #t]
+                   [(< n nd)(element? n l-tree)]
+                   [(> n nd)(element? n r-tree)]))
+      )))
+
+
+;insert-element
+;Inserta un arbol hoja con n como nodo en el arbol binario si el numero no esta dentro del arbol,
+;de lo contrario retorna el arbol sin ningun cambio.
+
+(define insert-element-into-bintree
+  (lambda (n btree)
+    (cases bintree btree
+      (empty-bintree () (recursive n (empty-bintree) (empty-bintree)))
+      (recursive (nd l-tree r-tree)
+                 (cond
+                   [(< n nd) (list nd (insert-element-into-bintree n l-tree)
+                               r-tree)]
+                   [(> n nd)(list nd l-tree
+                              (insert-element-into-bintree n r-tree))]
+                   [(element? n btree)btree])))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;parse
+;Recibe un arbol en sintaxis concreta y lo retorna en abstracta
+
+(define parse
+  (lambda (bt)
+    (if (null? bt) (empty-bintree)
+        (recursive (car bt) (parse (cadr bt)) (parse (caddr bt))))))
+
+
+;unparse
+;Recibe un arbol en sintaxis abstracta y lo retorna en concreta
+
+(define unparse
+  (lambda (bt)
+    (cases bintree bt
+      (empty-bintree () empty)
+      (recursive (n l-tree r-tree)
+                 (list  n (unparse l-tree) (unparse r-tree))))))
+
+
+
+
+
+
+
+
+
+
+
+

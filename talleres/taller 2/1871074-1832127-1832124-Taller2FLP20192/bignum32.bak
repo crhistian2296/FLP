@@ -1,0 +1,100 @@
+#lang eopl
+;INTEGRANTES:
+;1871074 - MICHELLE GONZÁLEZ HERNÁNDEZ
+;1832127 - MELISSA GONZÁLEZ NEBRIJO
+;1832124 - CRHISTIAN ALEXANDER GARCÍA URBANO
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; REPRESENTACIÓN BIGNUM 32
+
+;zero:
+;Implementación del cero de la gramática
+(define zero '())
+
+;is-zero? 
+;Implementación del predicado is-zero? 
+(define is-zero? null?)
+
+;successor:
+;Funciín que se encarga de realizar el sucesor de la lista que recibe. 
+(define successor
+  (lambda (lista)
+    (cond
+      [(is-zero? lista)'(1)]
+      [(< (car lista) 31) (cons (+ 1 (car lista))(cdr lista))]
+      [else (cons 0 (successor (cdr lista)))])))
+
+;predecessor:
+;Función que se encarga de realizar el predecesor de la lista recibida. 
+(define predecessor
+  (lambda (lista)
+    (cond
+      [(equal? '(1) lista) '()]
+      [(> (car lista) 0) (cons (- (car lista) 1)(cdr lista))]
+      [(is-zero? lista) (eopl:error "0 does not have a predecessor")]
+      [else (cons 31 (predecessor (cdr lista)))])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Codigo cliente:
+
+;suma:
+(define suma
+  (lambda (x y)
+    (if (is-zero? x)
+        y
+        (successor (suma (predecessor x) y)))))
+
+;;PRUEBAS:
+;;(suma '(4) '(3)) -> '(7)
+;;(suma '(2 3)  '(3 3)) -> '(5 6)
+
+;resta:
+(define resta
+  (lambda (x y)
+    (if (is-zero? y)
+        x
+        (predecessor (resta  x (predecessor y))))))
+
+;;PRUEBAS:
+;;(resta '(4 4 5) '(3 3 4)) -> '(1 1 1)
+;;(resta '(10 9 5 7) '(3 5 5 6)) -> '(7 4 0 1) 
+
+;multiplicacion:
+(define multiplicacion
+  (lambda (x y)
+    (if (is-zero? y) zero
+        (suma (multiplicacion x (predecessor y)) x))
+    ))
+
+;;PRUEBAS:
+;;(multiplicacion '(10) '(2)) -> '(20)
+;;(multiplicacion '(2 5) '(2 4)) -> (4 18 20)
+
+;potencia:
+(define potencia
+  (lambda (x y)
+    (if (is-zero? y)
+        (successor y)
+        (multiplicacion (potencia x (predecessor y)) x))))
+
+;;PRUEBAS:
+;;(potencia '(3) '(2))-> '(9)
+;;(potencia '(4) '(5))-> '(0 0 1)
+
+;factorial:
+(define factorial
+  (lambda (n)
+    (if (is-zero? n)
+        (successor n)
+        (multiplicacion n (factorial (predecessor n))))))
+
+;;PRUEBAS:
+;;(factorial '(3))-> '(6)
+;;(factorial '(6)) -> '(16 22)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Función auxiliar
+
+;bignum->nat:
+;Esta función se encarga de convertir el número bignum a número natural. 
+(define (bignum->nat n)
+  (if (null? n) 0 (+ (car n) (* 32 (bignum->nat (cdr n))))))

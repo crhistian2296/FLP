@@ -1,0 +1,171 @@
+#lang eopl
+;INTEGRANTES:
+;1871074 - MICHELLE GONZÁLEZ HERNÁNDEZ
+;1832127 - MELISSA GONZÁLEZ NEBRIJO
+;1832124 - CRHISTIAN ALEXANDER GARCÍA URBANO
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Gramática:
+;<Bintree> ::= ()|(Int <Bintree>  <Bintree>
+
+;Extractores
+
+;Empty-bintree
+;define un árbol binario vacio
+(define empty-bintree (lambda () empty))
+
+;Current-element
+;función que retorna el valor del nodo de un árbol
+(define current-element
+  (lambda (bt) (car bt)))
+
+;Move-to-left-son
+;función que retorna el valor del nodo del hijo izquierdo de un árbol binario
+(define move-to-left-son
+  (lambda (bt) (cadr bt)))
+
+;Move-to-right-son
+;función que retorna el valor del nodo del hijo derecho de un árbol binario
+(define move-to-right-son
+  (lambda (bt) (caddr bt)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;Predicados
+
+;Empty-bintree?
+;función que retorna un booleano afirmando o desmintiendo que un árbol esta vacio
+(define empty-bintree?
+  (lambda (bt)
+    (null? bt)))
+
+;At-leaf?
+;función que retorna un booleano afirmando o desmintiendo que un hoja
+(define at-leaf?
+  (lambda (bt)
+    (and (null? (cadr bt)) (null? (caddr bt)))))
+
+;Bintree-with-at-least-one-child?
+;función que retorna un booleano afirmando o desmintiendo 
+(define bintree-with-at-least-one-child?
+  (lambda (bt)
+    (or (not(null? (cadr bt))) (not(null? (caddr bt))))))
+
+;Element?
+;función que comprueba si el número dado es un valor de algún nodo del un árbol binario y retorna un booleano
+(define element?
+  (lambda (n btree)
+    (cond
+      [(null? btree) #f]
+      [(eq? n (car btree)) #t]
+      [(< n (car btree))(element? n (cadr btree))]
+      [(> n (car btree))(element? n (caddr btree))])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;Number->bintree
+;función que recibe un número y lo transforma en un árbol binario con la gramática utilizada sin hijos inicilmente
+(define number->bintree
+  (lambda (n)
+    (list n '() '())))
+
+;Insert-to-left
+;función que recibe un número, lo transforma en árbol bianrio y lo inserta en el hijo izquierdo
+(define insert-to-left
+  (lambda (n bt)
+    (letrec
+        (
+         (to-insert (number->bintree n) )
+         )
+      (list (car bt) to-insert (caddr bt))
+      )))
+
+
+;Insert-to-right
+;función que recibe un número, lo transforma en árbol bianrio y lo inserta en el hijo derecho
+(define insert-to-right
+  (lambda (n bt)
+    (letrec
+        (
+         (to-insert (number->bintree n) )
+         )
+      (list (car bt) (cadr bt) to-insert )
+      )))
+
+;Low
+;función que recibe un árbol binario y retorna una lista con todos los valores de sus nodos al mismo nivel
+(define low
+  (lambda (l)
+    (cond
+      [(null? l) empty]
+      [(list? (car l)) (append (low (car l)) (low (cdr l)))]
+      [(cons (car l) (low (cdr l)))])))
+
+;Validate-left
+;Recibe un arbol binario y un numero. Determina si todos los nodos del hijo izquierdo son
+;menores al nodo actual.
+(define validate-left
+  (lambda (bt n)
+    (letrec
+        ( (left (low  bt))
+          (compare
+           (lambda (n t) (if (null? t) #t
+                 (and (<  (car t) n) (compare  n (cdr t))))
+          )
+      )
+          )(compare n left))))
+
+;Validate-right
+;Recibe un arbol binario y un numero. Determina si todos los nodos del hijo derecho son
+;mayores al nodo actual. 
+(define validate-right
+  (lambda (bt n)
+    (letrec
+        ( (right (low  bt))
+          (compare
+           (lambda (n t) (if (null? t) #t
+                 (and (>  (car t) n) (compare  n (cdr t))))
+          )
+      )
+          )(compare n right))))
+
+;Bintree-order-validation
+;retorna un booleano afirmando o negando que el arbol esta organizado correctamente
+(define bintree-order-validation
+  (lambda (bt)
+    (cond
+      [ (null?  bt) #t ]
+      [else
+       (letrec
+           ( (head (car bt))
+             (left-child (cadr bt))
+             (right-child (caddr bt))
+             (left (if (null? left-child) #t (< (car left-child) head) ))
+             (right (if (null? right-child) #t (> (car right-child) head) ) )
+             (validation
+              (lambda ()
+                (and left (bintree-order-validation left-child)
+                     (validate-left left-child head)
+                     (validate-right right-child head)
+                     right (bintree-order-validation right-child))))
+             ) (validation)
+         )])))
+
+
+(define bin '(8 (3 (1 () ()) (6 (4 () ()) (7 () ()))) (10 () (14 (13 () ()) ())))   )
+
+;Insert-element-into-bintree
+;Inserta un arbol hoja con n como nodo en el arbol binario si el numero no esta dentro del arbol,
+;de lo contrario retorna el arbol sin ningun cambio.
+(define insert-element-into-bintree
+  (lambda (n btree)
+    (cond
+      [(null? btree) (list n empty empty)]
+      [(< n (car btree)) (list (car btree)(insert-element-into-bintree n (cadr btree))
+                               (caddr btree))]
+      [(> n (car btree))(list (car btree)(cadr btree)
+                              (insert-element-into-bintree n (caddr btree)))]
+      [(element? n btree)btree])))
+
+
+
+
