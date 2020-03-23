@@ -1,0 +1,143 @@
+#lang eopl
+
+;;  <programa>       ::= <expresion>
+;;                   un-program (exp)
+;;  <expresion>      ::= <numero>
+;;                   num-lit (n)
+;;                   ::= (<expresion>  <operacion> <expresion>)
+;;                   exp-lit (exp1 op exp2)
+;;                   ::= <identificador>
+;;                   variable (id)
+;;                   ::= var (identificador = <expresion>)*  in <expresion>
+;;                   declaracion (ids exps cuerpo)
+;;  <operacion>      := + - * /
+;;                   primitiva
+
+(define lexico
+'((espacios (whitespace) skip)
+  (comentario ("%" (arbno (not #\newline))) skip)
+  (identificador  (letter (arbno (or letter digit "?"))) symbol)
+  (numero (digit (arbno digit)) number)
+  (numero ("-" digit (arbno digit)) number)))
+
+(define gramatica
+  '(
+    (programa (expresion) un-programa)
+    (expresion (numero) num-lit)
+    (expresion ("(" expresion operacion expresion ")") exp-lit)
+    (expresion (identificador) variable)
+    (expresion ("var" (arbno identificador "=" expresion) "in" expresion)
+                declaracion)
+    (operacion ("+") sum-primitiva)
+    (operacion ("~") res-primitiva)
+    ))
+
+
+(sllgen:make-define-datatypes lexico gramatica)
+ 
+(define scan&parse
+  (sllgen:make-string-parser lexico gramatica))
+;El Analizador Léxico (Scanner)
+
+(define just-scan
+  (sllgen:make-string-scanner lexico gramatica))
+
+
+(define interpretador
+  (sllgen:make-rep-loop  "--> "
+    (lambda (pgm) (evaluar-programa pgm miambiente)) 
+    (sllgen:make-stream-parser 
+      lexico
+      gramatica)))
+
+(define evaluar-programa
+  (lambda (pgm amb)
+    (cases programa pgm
+      (un-programa (exp) (evaluar-expresion exp amb))
+    )))
+
+(define evaluar-expresion
+  (lambda (exp amb)
+    (cases expresion  exp
+      (num-lit (n) n)
+      (variable (id) (apply-env amb id) )
+      (declaracion (ids exps cuerpo)
+                   (let (
+                         ;variables
+                         (resultados (map (lambda (x) (evaluar-expresion x amb)) exps))
+                         )
+;cuerpo
+                   (evaluar-expresion cuerpo
+                                (extended-env-record ids resultados amb))
+                     )
+                   
+                     )
+      (exp-lit (exp1 op exp2)
+               (let (
+                     ;variables
+                     (valor1 (evaluar-expresion exp1 amb))
+                     (valor2 (evaluar-expresion exp2 amb))
+                     )
+                 ;cuerpo
+                 (evaluar-operacion valor1 valor2 op)
+                )
+
+               )
+      
+        )
+
+    ))
+
+(define evaluar-operacion
+(lambda (v1 v2 op)
+  (cases operacion op
+    (sum-primitiva () (+ v1 v2))
+    (res-primitiva () (- v1 v2))
+  )))
+
+;definición del tipo de dato ambiente
+(define-datatype environment environment?
+  (empty-env-record)
+  (extended-env-record (syms (list-of symbol?))
+                       (vals (list-of scheme-value?))
+                       (env environment?)))
+(define scheme-value? (lambda (v) #t))
+
+
+(define miambiente
+  (extended-env-record '(a b c) '(-1 -2 -3) (extended-env-record '(x y z) '(1 2 3)  (empty-env-record) )))
+
+;función que busca un símbolo en un ambiente
+(define apply-env
+  (lambda (env sym)
+    (cases environment env
+      (empty-env-record ()
+                        (eopl:error 'apply-env "No existe ~s" sym))
+      (extended-env-record (syms vals env)
+                           (let ((pos (list-find-position sym syms)))
+                             (if (number? pos)
+                                 (list-ref vals pos)
+                                 (apply-env env sym)))))))
+
+
+;****************************************************************************************
+;Funciones Auxiliares
+
+; funciones auxiliares para encontrar la posición de un símbolo
+; en la lista de símbolos de unambiente
+
+(define list-find-position
+  (lambda (sym los)
+    (list-index (lambda (sym1) (eqv? sym1 sym)) los)))
+
+(define list-index
+  (lambda (pred ls)
+    (cond
+      ((null? ls) #f)
+      ((pred (car ls)) 0)
+      (else (let ((list-index-r (list-index pred (cdr ls))))
+              (if (number? list-index-r)
+                (+ list-index-r 1)
+                #f))))))
+
+(interpretador)
