@@ -1,0 +1,96 @@
+#lang eopl
+
+;;Autor: Carlos A Delgado S
+;;Fecha: Junio 10 de 2019
+
+;;
+(define zero '())
+
+(define is-zero? null?)
+
+(define succesor
+  (lambda (n)
+    (cond
+      [(is-zero? n) (cons 1 (cons 0 '()))]
+      [(= (car n) 15)
+       (letrec
+           (
+            (contar-15
+             (lambda (n1)
+               (cond
+                 [(null? n1) 0]
+                 [(= (car n1) 15) (+ 1 (contar-15 (cdr n1)))]
+                 [else 0]
+                 )
+               )
+             )
+
+            (construir-salida
+             (lambda (n1 c)
+               (cond
+                 [(null? n1) (cons 1 '())]
+                 [(= c 0) (cons (+ (car n1) 1) (cdr n1))]
+                 [else (cons 0 (construir-salida (cdr n1) (- c 1)))]
+                 )
+               )
+             )
+            )
+            (construir-salida n (contar-15 n))
+        )
+       ]
+      [else (cons (+ 1 (car n)) (cdr n))]
+      )
+    )
+  )
+
+
+(define predecesor
+   (lambda (n)
+     (cond
+       [(is-zero? n) (eopl:error "No se puede aplicar predecesor")]
+       [(eqv? n '(1 0)) '()]
+       [(= (car n) 0)
+
+        (letrec
+           (
+            (contar-0
+             (lambda (n1)
+               (cond
+                 [(null? n1) 0]
+                 [(= (car n1) 0) (+ 1 (contar-0 (cdr n1)))]
+                 [else 0]
+                 )
+               )
+             )
+
+            (construir-salida
+             (lambda (n1 c)
+               (cond
+                 [(null? (cdr n1)) '()]
+                 [(= c 0) (cons 15 (cdr n1))]
+                 [else (cons 15 (construir-salida (cdr n1) (- c 1)))]
+                 )
+               )
+             )
+            )
+            (construir-salida n (contar-0 n))
+        )
+        ]
+
+       [else (cons (- (car n) 1) (cdr n))]
+       )
+     )
+)
+
+;;
+;;Funciones a partir de la representación
+;;*********************************
+
+(define plus
+  (lambda (x y)
+    (cond
+      [(is-zero? y) x]
+      [else (plus (succesor x) (predecesor y))]
+      )
+    )
+  )
