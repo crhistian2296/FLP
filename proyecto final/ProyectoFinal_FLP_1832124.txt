@@ -1,0 +1,145 @@
+#lang eopl
+; Autor: Crhistian Alexander Garcia
+; Código: 1832124 
+
+
+;=====================================================================================
+
+;ESPECIFICACIÓN LEXICA
+
+(define lexica
+  '((white-sp (whitespace) skip)
+    (comment ("/*" (arbno (not #\newline)) "*/") skip) ;Comentario basado C++
+    (string ("'" letter (arbno (or letter digit)) "'") string) ;String basado en python3
+    (identifier ("$" letter (arbno (or letter digit))) symbol) ;Identificador basado en PHP
+    (number (digit (arbno digit)) number)
+    (number ("-" digit (arbno digit)) number)
+    (number (digit (arbno digit) "." digit (arbno digit)) number)
+    (number ("-" digit (arbno digit) "." digit (arbno digit)) number)))
+
+;=====================================================================================
+
+;ESPECIFICACIÓN GRAMATICAL
+
+(define gramatica
+  '(
+    (program (expression) run)
+    (expression (number) num)
+    (expression (string) string)
+    (expression (identifier) id)
+    (expression ("true")true-exp)
+    (expression ("false")false-exp)
+    
+    ;Condicionales:
+    (expression ("if" "(" expression ")" "{" expression "}" "else" "{" expression "}")if-condition); condicional basado en C++
+
+    ;Constantes:
+    (exp ("const" identifier "=" expression)constant);declaración basada en c++
+
+    ;Valores definidos:
+    (exp ("val-define" identifier "=" expression) unique-var-define)
+
+    ;Valores indefinidos:
+    (exp ("val-undefine" identifier) unique-var-undefine)
+    
+    ;Declaración:
+    (expression ("declare" "(" (separated-list exp "~") ")" "{"expression"}") declare-exp)
+
+    ;Procedimientos:
+    (expression ("function" "(" (separated-list identifier "~") ")" "{" expression "}")function-exp)
+
+    ;Asignación:
+    (expression ("unique assign" identifier "=" expression) unique-assign-exp)
+
+    ;Listas:
+    (expression ("list" "<"(separated-list expression ",")">" )list-exp)
+    
+    ;Evaluar procedimiento:
+    (expression
+     ("[" expression (separated-list expression "~") "]")app-exp) ;llamado de funciones similar a python
+
+    ;Recusividad:
+    (expression  ;basada en LISP
+     ("letrec" (arbno identifier "(" (separated-list identifier "~") ")" "=" expression)  "in" expression) letrec-exp)
+
+    ;Primitivas:
+    (expression ("(" expression primitive-binary expression ")") bin-primitive-exp) ;binaria
+    (expression (primitive-unary "("expression")") un-primitive-exp) ;unaria
+    (expression ("|(" expression primitive-binary-base expression ")")bin-primitive-base-exp) ;binaria base distinta
+    (expression (primitive-unary-base "(" expression ")") un-primitive-base-exp) ;unaria base distinta
+    (expression ("*(" expression primitive-binary-bool expression ")")bin-primitive-bool-exp)
+    (expression (primitive-unary-bool "("expression ")")un-primitive-bool-exp)
+    ;Primitivas -> Listas:
+    (expression (primitive-pred-list expression)predicate-primitive-list)
+    (expression (primitive-binary-list "(" expression expression ")")bin-primitive-list-exp)
+    (expression (primitive-unary-list expression)un-primitive-list-exp)
+    (expression ("empty")primitive-empty-list)
+    (expression (primitive-unary-string "("expression")")un-primitive-string-exp)
+    (expression ("#(" expression primitive-binary-string expression ")")bin-primitive-string-exp)
+    
+    ;Primitivas para enteros:
+    (primitive-binary ("+") sum-prim)
+    (primitive-binary ("-") substract-prim)
+    (primitive-binary ("*") multiply-prim)
+    (primitive-binary ("%") module-prim)
+    (primitive-binary ("/") div-prim)
+    (primitive-unary ("add1") incr-prim)
+    (primitive-unary ("sub1") decr-prim)
+
+    ;Distintas bases:
+    (expression ( "x32" "["(arbno number) "]") 32base)
+    (expression ( "x16" "["  (arbno number) "]")hexa)
+    (expression ( "x8""["  (arbno number) "]")oct)
+    
+    ;Primitivas para base8, base16 y base32:
+    (primitive-binary-base ("+") add-prim-base)
+    (primitive-binary-base ("-") substract-prim-base)
+    (primitive-binary-base ("*")mult-prim-base)
+    (primitive-unary-base ("|add1") incr-prim-base)
+    (primitive-unary-base ("|sub1") decr-prim-base)
+    
+    ;Primitivas para booleanos:
+    (primitive-binary-bool ("<") smaller-than-prim)
+    (primitive-binary-bool (">") bigger-than-prim)
+    (primitive-binary-bool ("<=")less-or-equal-prim)
+    (primitive-binary-bool (">=")bigger-or-equal-prim)
+    (primitive-binary-bool ("==")equal-prim)
+    (primitive-binary-bool ("!=")different-prim)
+    (primitive-binary-bool ("and")and-prim)
+    (primitive-binary-bool ("or")or-prim)
+    (primitive-unary-bool ("not") not-prim)
+
+    ;Primitivas para cadenas
+    (primitive-unary-string ("length") length-prim)
+    (primitive-binary-string ("#append")append-string-prim)
+    
+    ;Primitivas para listas 
+    (primitive-pred-list ("empty?") empty?-prim)
+    (primitive-pred-list ("list?")list?-prim)
+    (primitive-binary-list ("cons") cons-prim)
+    (primitive-binary-list ("append") append-prim)
+    (primitive-unary-list ("car") car-prim)
+    (primitive-unary-list ("cdr")cdr-prim)))
+
+;=====================================================================================
+    
+;Construidos automáticamente
+
+(sllgen:make-define-datatypes lexica gramatica)
+
+(define show-the-datatypes
+  (lambda () (sllgen:list-define-datatypes lexica gramatica)))
+
+(sllgen:make-stream-parser lexica gramatica)
+
+;=====================================================================================
+
+;Parser y Scanner 
+
+(define scan&parse
+  (sllgen:make-string-parser lexica gramatica))
+
+(define just-scan
+  (sllgen:make-string-scanner lexica gramatica))
+
+;=====================================================================================

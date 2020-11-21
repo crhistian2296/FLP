@@ -1,0 +1,118 @@
+ex.01
+list < 2, 2.752, 'FLP', true, long (const $factorial ($n){
+if (*($n > 0)) {($n * [$factorial sub1($n)])}
+else {1}}) <[$factorial 6 ]>>
+
+ex.06
+declare (const $listaUno = list <'Hola'>, const $listaUno = list <'amigos'>)
+{append ($listaUno $listaDos)}
+
+ex.07
+//a
+declare (const $x=9 ,const $y=3){
+ if($x) {($x+$y)} else {($x+$y)}}
+declare (const $x=9 ,const $y=3){
+ if($x) {($x-$y)} else {($x*$y)}}
+declare (const $x=9 ,const $y=3){
+ if($x) {($x*$y)} else {($x/$y)}}
+declare (const $x=9 ,const $y=3){
+ if($x) {($x/$y)} else {($x%$y)}}
+declare (const $x=9 ,const $y=3){
+ if($x) {($x%$y)} else {($x%$y)}}
+
+
+
+declare (const $pi = 3.1416,
+         val-define $AreaEsfera = function($pi, $r)
+                                     {((4* $pi)* ($r * $r))})
+                                     {[$AreaEsfera $pi, 2]}
+
+
+declare (const $stringA = 'hola', const $stringB = 'mundo')
+        {cons ($stringA $stringB)}
+
+
+declare(const $liA =  list <'Colombia'>)
+       {empty? $liA}
+declare(const $liB = empty)
+       {empty? $liB}
+declare(const $liA =  list <'Colombia'>)
+       {list? $liA}
+declare(const $liC = list <empty>, const $liD = list <'locura'>)
+       {cons ($liC $liD)}
+declare(const $listaUno = list <'Hola'>, const $listaDos = list <'amigos'>)
+       {append ($listaUno $listaDos)}
+
+
+declare (val-define $mayor = function ($a, $b)
+     {if (*($a > $b)) {$a}
+      else {$b}})
+      [$mayor 2, 6]
+
+long (const $factorial ($n){
+         if (*($n > 0)) {($n * [$factorial sub1($n)])}
+         else {1}})
+<[$factorial 6 ]>
+
+
+
+long (
+      const $factorial ($n) {if (*($n > 0)) {($n * [$factorial sub1($n)])}
+                             else {1}},
+
+      const $factorialist ($l) {if (empty? $l) {empty} 
+                                else
+                                  {cons ([$factorial (car $l)] [$factorialist cdr $l])}})
+<[$factorialist (list <2,3>)]>
+
+
+	
+
+
+
+long (
+
+      const $factorial ($n) {if (*($n > 0)) {($n * [$factorial sub1($n)])}
+                             else {1}},
+
+      const $factorialist ($l) {if (empty? $l) {empty} 
+                                else
+                                  {cons ([$factorial (car $l)] [$factorialist cdr $l])}})
+
+<[$factorialist (list <2,3>)]>
+
+
+
+
+long( const $even? ($n) {if (*((n%2)==0)) {true}
+                         else {false}},
+
+      const $just_pairs ($l) {if (empty? $l) {empty}
+                              else { if ([$even? (car $l)])
+                                           {cons ( car $l [just_pairs (cdr $l)])}
+                                     else{ [just_pairs cdr $l]}}}
+     )
+< [$just_pairs list<3, 4, 2, 7, 6> ]>
+
+
+
+
+long (const $map  ($lista $funcionUnaria)
+                               {if (empty? $lista) {empty}
+                               else {(cons ($funcionUnaria (car $lista))  [$map (cdr $lista) $funcionUnaria])}},
+      const $even? ($n) {if (*((n%2)==0)) {true}
+                         else {false}}
+     )
+< [$map list<3, 4, 2, 7, 6> $even? ]>
+
+
+
+
+(just-parse 
+   "declare(
+      const $ag = (5%3))
+    {$ag}
+    
+    declare(
+       const $l = list <$ag>)
+    {$l}")
